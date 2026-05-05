@@ -350,13 +350,155 @@ const RegistroTarjetas = ({ onBack }) => {
   );
 };
 
+
+// ---- PRECIOS ----
+const HABITACIONES = [
+  { tipo: "Viajante",    ef: 40000,  dig: 45000  },
+  { tipo: "Simple",      ef: 50000,  dig: 55000  },
+  { tipo: "Doble",       ef: 70000,  dig: 81000  },
+  { tipo: "Triple",      ef: 90000,  dig: 98000  },
+  { tipo: "Cuádruple",   ef: 100000, dig: 108000 },
+  { tipo: "Quíntuple",   ef: 115000, dig: 125000 },
+  { tipo: "Séxtuple",    ef: 130000, dig: 140000 },
+  { tipo: "Suite",       ef: 80000,  dig: 87000  },
+];
+
+const fmt = n => "$" + n.toLocaleString("es-AR");
+
+const Precios = ({ onBack }) => {
+  const [seleccionada, setSeleccionada] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const flyerRef = useRef(null);
+  const flyerTodosRef = useRef(null);
+
+  useEffect(() => {
+    if (!window.html2canvas) {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+      document.head.appendChild(s);
+    }
+  }, []);
+
+  const compartirWA = async (ref) => {
+    setLoading(true);
+    try {
+      const canvas = await new Promise((res, rej) => {
+        window.html2canvas(ref.current, { scale: 2, useCORS: true, backgroundColor: null }).then(res).catch(rej);
+      });
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], "barrica_precio.png", { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: "Barrica Hotel · Precios" });
+        } else {
+          const a = document.createElement("a"); a.download = "barrica_precio.png"; a.href = canvas.toDataURL("image/png"); a.click();
+          setTimeout(() => window.open("https://wa.me/", "_blank"), 800);
+        }
+        setLoading(false);
+      }, "image/png");
+    } catch(e) { alert("Error al compartir"); setLoading(false); }
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#f0ebe0", padding:"32px 20px", fontFamily:"sans-serif" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');`}</style>
+      <div style={{ maxWidth:600, margin:"0 auto" }}>
+        <button onClick={onBack} style={{ background:"none", border:"2px solid #2a4a2a", color:"#2a4a2a", borderRadius:8, padding:"8px 18px", cursor:"pointer", marginBottom:24, fontSize:14 }}>← Volver</button>
+        <h1 style={{ fontFamily:"'Playfair Display',serif", color:"#2a4a2a", fontSize:22, marginBottom:6 }}>Mandar Precios</h1>
+        <p style={{ fontSize:13, color:"#666", marginBottom:24 }}>Seleccioná una habitación para enviar su precio por WhatsApp</p>
+
+        {/* Botones de habitaciones */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:24 }}>
+          {HABITACIONES.map((h, i) => (
+            <button key={i} onClick={() => setSeleccionada(h)}
+              style={{ background: seleccionada?.tipo === h.tipo ? "#2a4a2a" : "#fff", color: seleccionada?.tipo === h.tipo ? "#c9bc9b" : "#2a4a2a", border:"2px solid #2a4a2a", borderRadius:12, padding:"14px 12px", cursor:"pointer", textAlign:"left", fontFamily:"'DM Sans',sans-serif", transition:"all 0.15s" }}>
+              <div style={{ fontSize:14, fontWeight:600, marginBottom:4 }}>Hab. {h.tipo}</div>
+              <div style={{ fontSize:12, opacity:0.8 }}>EF {fmt(h.ef)}</div>
+              <div style={{ fontSize:12, opacity:0.8 }}>DIG {fmt(h.dig)}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Flyer individual */}
+        {seleccionada && (
+          <div style={{ marginBottom:32 }}>
+            <p style={{ fontSize:11, fontWeight:500, color:"#888", textTransform:"uppercase", letterSpacing:".06em", marginBottom:10 }}>Vista previa</p>
+            <div ref={flyerRef} style={{ background:"#f0ebe0", borderRadius:16, padding:"32px 28px", textAlign:"center", boxShadow:"0 4px 20px rgba(42,74,42,.12)" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, marginBottom:20 }}>
+                <img src={LOGO} alt="Logo" style={{ width:48, height:48, borderRadius:"50%", objectFit:"cover", border:"2px solid #2a4a2a" }} />
+                <div style={{ textAlign:"left" }}>
+                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18, fontWeight:700, color:"#2a4a2a", letterSpacing:2 }}>BARRICA HOTEL</div>
+                  <div style={{ fontSize:9, color:"#2a4a2a", opacity:0.5, letterSpacing:3 }}>· REALICÓ · LA PAMPA ·</div>
+                </div>
+              </div>
+              <div style={{ background:"#fff", borderRadius:12, padding:"24px 28px" }}>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:"#2a4a2a", marginBottom:20 }}>Habitación {seleccionada.tipo}</div>
+                <div style={{ display:"flex", justifyContent:"center", gap:28 }}>
+                  <div style={{ textAlign:"center" }}>
+                    <div style={{ fontSize:12, color:"#2a4a2a", opacity:0.6, letterSpacing:2, marginBottom:6, textTransform:"uppercase" }}>Efectivo</div>
+                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:30, fontWeight:700, color:"#2a4a2a" }}>{fmt(seleccionada.ef)}</div>
+                  </div>
+                  <div style={{ width:1, background:"#d0c8b8" }} />
+                  <div style={{ textAlign:"center" }}>
+                    <div style={{ fontSize:12, color:"#2a4a2a", opacity:0.6, letterSpacing:2, marginBottom:6, textTransform:"uppercase" }}>Digital</div>
+                    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:30, fontWeight:700, color:"#2a4a2a" }}>{fmt(seleccionada.dig)}</div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize:11, color:"#2a4a2a", opacity:0.4, marginTop:16, letterSpacing:1 }}>@hotelbarrica</div>
+            </div>
+            <button onClick={() => compartirWA(flyerRef)} disabled={loading}
+              style={{ width:"100%", background:"#25D366", color:"#fff", border:"none", borderRadius:10, padding:"13px 0", fontSize:15, fontWeight:500, cursor:"pointer", marginTop:12, opacity:loading?0.6:1 }}>
+              {loading ? "Generando..." : "💬 Enviar por WhatsApp"}
+            </button>
+          </div>
+        )}
+
+        {/* Flyer TODOS los precios */}
+        <div>
+          <p style={{ fontSize:11, fontWeight:500, color:"#888", textTransform:"uppercase", letterSpacing:".06em", marginBottom:10 }}>Todas las tarifas</p>
+          <div ref={flyerTodosRef} style={{ background:"#f0ebe0", borderRadius:16, padding:"28px 24px", boxShadow:"0 4px 20px rgba(42,74,42,.12)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, marginBottom:16 }}>
+              <img src={LOGO} alt="Logo" style={{ width:44, height:44, borderRadius:"50%", objectFit:"cover", border:"2px solid #2a4a2a" }} />
+              <div>
+                <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:"#2a4a2a", letterSpacing:2 }}>BARRICA HOTEL</div>
+                <div style={{ fontSize:9, color:"#2a4a2a", opacity:0.5, letterSpacing:3 }}>· REALICÓ · LA PAMPA ·</div>
+              </div>
+            </div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:"#2a4a2a", textAlign:"center", marginBottom:16, letterSpacing:2 }}>TARIFAS</div>
+            <div style={{ background:"#fff", borderRadius:10, overflow:"hidden" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", padding:"10px 16px", borderBottom:"2px solid #f0ebe0", background:"#2a4a2a" }}>
+                <div style={{ fontSize:11, color:"#c9bc9b", letterSpacing:1, fontWeight:600 }}>HABITACIÓN</div>
+                <div style={{ fontSize:11, color:"#c9bc9b", letterSpacing:1, textAlign:"center", fontWeight:600 }}>EFECTIVO</div>
+                <div style={{ fontSize:11, color:"#c9bc9b", letterSpacing:1, textAlign:"right", fontWeight:600 }}>DIGITAL</div>
+              </div>
+              {HABITACIONES.map((h, i) => (
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", padding:"12px 16px", borderBottom: i < HABITACIONES.length-1 ? "1px solid #f0ebe0" : "none", background: i%2===0 ? "#fff" : "#f8f5ef" }}>
+                  <div style={{ fontSize:15, color:"#1e3520", fontFamily:"'DM Sans',sans-serif", fontWeight:500 }}>Hab. {h.tipo}</div>
+                  <div style={{ fontSize:15, color:"#2a4a2a", fontWeight:700, textAlign:"center" }}>{fmt(h.ef)}</div>
+                  <div style={{ fontSize:15, color:"#2a4a2a", fontWeight:700, textAlign:"right" }}>{fmt(h.dig)}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize:10, color:"#2a4a2a", opacity:0.4, textAlign:"center", marginTop:14, letterSpacing:1 }}>@hotelbarrica</div>
+          </div>
+          <button onClick={() => compartirWA(flyerTodosRef)} disabled={loading}
+            style={{ width:"100%", background:"#25D366", color:"#fff", border:"none", borderRadius:10, padding:"13px 0", fontSize:15, fontWeight:500, cursor:"pointer", marginTop:12, opacity:loading?0.6:1 }}>
+            {loading ? "Generando..." : "💬 Enviar todas las tarifas por WhatsApp"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ---- DASHBOARD ----
-const Dashboard = ({ onLogout, onOpenTarjeta, onOpenMensaje, onOpenPromo, onOpenRegistro }) => {
+const Dashboard = ({ onLogout, onOpenTarjeta, onOpenMensaje, onOpenPromo, onOpenRegistro, onOpenPrecios }) => {
   const buttons = [
     { label:"Gestionar\nTarjeta Corporativa", icon:"🪪", active:true, action:onOpenTarjeta, desc:"Crear y administrar tarjetas" },
     { label:"Mandar Mensaje\nPersonalizado", icon:"✉️", active:true, action:onOpenMensaje, desc:"Mensaje con logo por WhatsApp" },
     { label:"Enviar\nPromoción", icon:"🏨", active:true, action:onOpenPromo, desc:"Imagen + mensaje por WhatsApp" },
     { label:"Registro de\nTarjetas", icon:"📋", active:true, action:onOpenRegistro, desc:"Ver tarjetas guardadas" },
+    { label:"Mandar\nPrecios", icon:"💰", active:true, action:onOpenPrecios, desc:"Tarifas por WhatsApp" },
   ];
   return (
     <div style={{ minHeight:"100vh", background:`linear-gradient(160deg,${COLORS.beigeLight} 0%,${COLORS.beige} 100%)` }}>
@@ -438,7 +580,8 @@ function App() {
   if (screen==="mensaje") return <MensajePersonalizado onBack={()=>setScreen("dashboard")} conPromo={false} />;
   if (screen==="promo") return <MensajePersonalizado onBack={()=>setScreen("dashboard")} conPromo={true} />;
   if (screen==="registro") return <RegistroTarjetas onBack={()=>setScreen("dashboard")} />;
-  return <Dashboard onLogout={()=>setScreen("login")} onOpenTarjeta={()=>setScreen("tarjeta")} onOpenMensaje={()=>setScreen("mensaje")} onOpenPromo={()=>setScreen("promo")} onOpenRegistro={()=>setScreen("registro")} />;
+  if (screen==="precios") return <Precios onBack={()=>setScreen("dashboard")} />;
+  return <Dashboard onLogout={()=>setScreen("login")} onOpenTarjeta={()=>setScreen("tarjeta")} onOpenMensaje={()=>setScreen("mensaje")} onOpenPromo={()=>setScreen("promo")} onOpenRegistro={()=>setScreen("registro")} onOpenPrecios={()=>setScreen("precios")} />;
 }
 
 
